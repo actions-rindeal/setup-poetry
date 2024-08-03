@@ -36,7 +36,6 @@ runs:
         with open(os.environ["GITHUB_OUTPUT"], 'a') as f:
             cache_paths_str = '\n'.join(cache_paths)  # FIXME: \n is invalid in ubuntu-22.04's python3.10 f-string, fix in ubuntu-24.04's python3.12
             f.write(f"CACHE-PATHS<<EOF\n\n{cache_paths_str}\nEOF\n")
-            #f.write(f"CACHE-PATHS={cache_paths_str}\n")
             f.write(f"PACKAGES={' '.join(packages)}\n")
       env:
         PACKAGES_INPUT: ${{ inputs.pipx-packages }}
