@@ -6,6 +6,7 @@ so you can just `poetry install` and chill.
 ## Inputs
 
 - `python-version`: Python version to set up (default: 3.x).
+- `poetry-version`: Poetry version to set up (default: latest).
 - `pipx-packages`: Additional pipx packages to install (optional).
 
 ## Outputs
@@ -32,8 +33,9 @@ jobs:
       - name: Set up Python and Poetry
         uses: actions-rindeal/setup-poetry@master
         with:
-          python-version: 3.8
-          pipx-packages: "black flake8"
+          # python-version: 3.11
+          # poetry-version: 1.8.1
+          # pipx-packages: "black flake8"
 
       - name: Run tests
         run: |
