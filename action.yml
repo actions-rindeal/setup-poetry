@@ -1,0 +1,90 @@
+name: "Setup Python and Poetry"
+description: "Sets up Python and Poetry"
+
+inputs:
+  python-version:
+    description: "Python version to set up"
+    required: true
+  pipx-packages:
+    description: "pipx packages to install in addition to poetry, space separated list"
+    required: false
+
+outputs:
+  cache-hit:
+    description: "True if all cache steps had a cache hit, otherwise false"
+    value: ${{ steps.check-all-cache-hits.outputs.all-cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Configure pipx packages and cache paths
+      id: pipx-config
+      shell: python
+      run: |
+        import os, subprocess
+
+        packages = ['poetry'] + os.environ['PACKAGES_INPUT'].split()
+        cache_paths = []
+        for var in ('PIPX_BIN_DIR', 'PIPX_LOCAL_VENVS'):
+            dir = subprocess.getoutput(f"pipx environment --value {var}")
+            for pkg in packages:
+                cache_paths += [ f"{dir}/{pkg}" ]
+        
+        with open(os.environ["GITHUB_OUTPUT"], 'a') as f:
+            cache_paths_str = '\n'.join(cache_paths)  # FIXME: \n is invalid in ubuntu-22.04's python3.10 f-string, fix in ubuntu-24.04's python3.12
+            f.write(f"CACHE-PATHS<<EOF\n{cache_paths_str}\nEOF\n")
+            #f.write(f"CACHE-PATHS={cache_paths_str}\n")
+            f.write(f"PACKAGES={' '.join(packages)}\n")
+      env:
+        PACKAGES_INPUT: ${{ inputs.pipx-packages }}
+    
+    - name: Cache pipx packages
+      id: pipx-cache
+      uses: actions/cache@main
+      with:
+        path: ${{ steps.pipx-config.outputs.CACHE-PATHS }}
+        key: ${{ runner.os }}-pipx-${{ hashFiles('**/poetry.lock') }}-${{ steps.pipx-config.outputs.PACKAGES }}
+        restore-keys: |
+          ${{ runner.os }}-pipx-${{ hashFiles('**/poetry.lock') }}-
+          ${{ runner.os }}-pipx-
+
+    - name: Install pipx packages
+      if: steps.pipx-cache.outputs.cache-hit != 'true'
+      shell: python
+      run: |
+        import os, subprocess
+        cmd = "time pipx -vvv install".split() + os.environ['PACKAGES'].split()
+        print("Running command:", cmd, flush=True)
+        subprocess.run(cmd, check=True)
+      env:
+        PACKAGES: ${{ steps.pipx-config.outputs.PACKAGES }}
+
+    - name: Set up Python ${{ inputs.python-version }}
+      id: python-setup
+      uses: actions/setup-python@main
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: poetry
+        cache-dependency-path: poetry.lock  
+
+    - name: Check all cache hits
+      id: check-all-cache-hits
+      shell: python
+      run: |
+        import json, os
+
+        steps_context = json.loads(os.environ['STEPS_CONTEXT'])
+
+        def get_cache_hit(step_id):
+            step_data = steps_context.get(step_id, {})
+            outputs = step_data.get('outputs', {})
+            return outputs.get('cache-hit', 'true').lower() == 'true'
+
+        all_cache_hit = all(get_cache_hit(step_id) for step_id in steps_context.keys())
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f'all-cache-hit={str(all_cache_hit).lower()}\n')
+
+        print(f"All cache hit: {all_cache_hit}")
+      env:
+        STEPS_CONTEXT: ${{ toJson(steps) }}
