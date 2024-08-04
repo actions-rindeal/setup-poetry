@@ -74,7 +74,9 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
         cache: poetry
-        cache-dependency-path: poetry.lock  
+        cache-dependency-path: |
+          **/poetry.lock
+          **/pyproject.toml
 
     - name: Check all cache hits
       id: check-all-cache-hits
