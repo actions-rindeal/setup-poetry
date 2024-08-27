@@ -20,6 +20,12 @@ inputs:
     required: false
 
 outputs:
+  poetry-version:
+    desription: 'TODO'
+    value: 'TODO'
+  poetry-path:
+    desription: 'TODO'
+    value: 'TODO
   cache-hit:
     description: "True if all cache steps had a cache hit, otherwise false"
     value: ${{ steps.check-all-cache-hits.outputs.all-cache-hit }}
