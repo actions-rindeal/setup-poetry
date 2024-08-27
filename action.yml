@@ -4,6 +4,10 @@
 name: "Setup Python and Poetry"
 description: "Sets up Python and Poetry"
 
+branding:
+  color: 'blue'
+  icon: 'book'
+
 inputs:
   python-version:
     description: "Python version to set up"
