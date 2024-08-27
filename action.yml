@@ -21,7 +21,7 @@ outputs:
     value: >
       ${{ steps['setup'].outputs['poetry-version'] }}
   'poetry-path':
-    desription: 'TODO'
+    description: 'TODO'
     value: 'TODO'
   'cache-hit':
     description: "Whether the Poetry cache was used."
