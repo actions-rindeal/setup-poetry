@@ -19,7 +19,7 @@ outputs:
   'poetry-version':
     description: "Installed Poetry version."
     value: >
-      ${{ steps['setup'].outputs['version'] }}
+      ${{ steps['setup'].outputs['poetry-version'] }}
   'poetry-path':
     desription: 'TODO'
     value: 'TODO'
@@ -57,9 +57,9 @@ runs:
 
           const getPoetryVersion = async () => {
               const inputs = JSON.parse(process.env['INPUTS'])
-              const version = inputs['version']
+              const version = inputs['poetry-version']
               if ( typeof version === 'undefined' ) {
-                  throw new Error(`'version' input is undefined`)
+                  throw new Error(`'poetry-version' input is undefined`)
               }
               if ( version ) {
                   core.info(`Using specified Poetry version: \`${version}\``)
@@ -90,8 +90,8 @@ runs:
           }
 
           const outputs = {
-              'version':         await getPoetryVersion(),
-              'venv':         `${await getVenvBaseDir()}/.poetry-venv`,
+              'poetry-version':  await getPoetryVersion(),
+              'venv-base-dir': ${await getVenvBaseDir()}/.poetry-venv`,
               'python-site-key': await getPythonSiteKey(),
           }
           for (const [key, value] of Object.entries(outputs)) {
@@ -106,8 +106,8 @@ runs:
       id: poetry-venv-cache
       uses: actions/cache@main
       with:
-        path: ${{ steps['vars'].outputs['venv'] }}
-        key: ${{ runner.os }}--poetry-${{ steps['vars'].outputs['version'] }}--${{ steps['vars'].outputs['python-site-key'] }}
+        path: ${{ steps['vars'].outputs['venv-base-dir'] }}
+        key: ${{ runner.os }}--poetry-${{ steps['vars'].outputs['poetry-version'] }}--${{ steps['vars'].outputs['python-site-key'] }}
 
     - name: Install Poetry
       uses: actions/github-script@v7
@@ -119,22 +119,22 @@ runs:
           const steps = JSON.parse(process.env['STEPS'])
           const boolMap = {true: true, false: false}
           const inputs = {
-            'venv':      steps['vars'].outputs['venv']?.trim(),
-            'version':   steps['vars'].outputs['version']?.trim(),
+            'venv-base-dir':      steps['vars'].outputs['venv-base-dir']?.trim(),
+            'poetry-version':   steps['vars'].outputs['poetry-version']?.trim(),
             'cache-hit': boolMap[steps['poetry-venv-cache'].outputs['cache-hit']?.trim().toLowerCase()],
           }
 
           core.debug(`Inputs: ${JSON.stringify(inputs)}`)
 
           const validateInputs = () => {
-            if ( typeof inputs['version'] !== 'string' || ! inputs['version'].length ) {
+            if ( typeof inputs['poetry-version'] !== 'string' || ! inputs['poetry-version'].length ) {
               throw new Error("Version must be a non-empty string")
             }
             if ( typeof inputs['cache-hit'] !== 'boolean' ) {
               throw new Error(`Invalid cache-hit value: \`${inputs['cache-hit']}\``)
             }
-            if ( inputs['cache-hit'] && ( ! fs.existsSync(inputs['venv']) || ! fs.lstatSync(inputs['venv']).isDirectory() ) ) {
-              throw new Error(`The path \`${inputs['venv']}\` is not a directory`)
+            if ( inputs['cache-hit'] && ( ! fs.existsSync(inputs['venv-base-dir']) || ! fs.lstatSync(inputs['venv-base-dir']).isDirectory() ) ) {
+              throw new Error(`The path \`${inputs['venv-base-dir']}\` is not a directory`)
             }
           }
 
@@ -144,9 +144,9 @@ runs:
           }
 
           const installPoetry = () => {
-            core.info(`Installing Poetry version ${inputs['version']}`)
-            execWithAnnounce('python3', ['-m', 'venv', inputs['venv']])
-            execWithAnnounce(`${inputs['venv']}/bin/pip`, ['install', `poetry===${inputs['version']}`])
+            core.info(`Installing Poetry version ${inputs['poetry-version']}`)
+            execWithAnnounce('python3', ['-m', "venv", inputs['venv-base-dir']])
+            execWithAnnounce(`${inputs['venv-base-dir']}/bin/pip`, ['install', `poetry===${inputs['poetry-version']}`])
           }
 
           validateInputs()
