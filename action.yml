@@ -32,7 +32,7 @@ runs:
   using: 'composite'
   steps:
     - id: vars
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const fs = require('fs')
@@ -110,7 +110,7 @@ runs:
         key: ${{ runner.os }}--poetry-${{ steps['vars'].outputs['poetry-version'] }}--${{ steps['vars'].outputs['python-site-key'] }}
 
     - name: Install Poetry
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         script: |
           const fs = require('fs')
